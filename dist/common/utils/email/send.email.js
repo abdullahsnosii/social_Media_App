@@ -43,7 +43,6 @@ async function sendEmail({ to, cc, bcc, subject, text, html, attachments = [], }
         });
         console.log("Message sent: %s", info.messageId);
         console.log("Preview URL: %s", nodemailer_1.default.getTestMessageUrl(info));
-        console.log("Accepted:", info.accepted);
     }
     catch (err) {
         console.error("Error while sending mail:", err);

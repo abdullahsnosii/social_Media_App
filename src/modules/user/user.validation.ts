@@ -23,3 +23,57 @@ export const suggestions = (lang: LanguageEnum) => z.object({
 export const updatePrivacy = (lang: LanguageEnum) => z.object({
     body: z.strictObject({ isPrivate: z.boolean() })
 })
+
+    
+
+export const sendFriendRequest = (lang:LanguageEnum)=>{
+     return z.object({
+    body:z.strictObject({
+        receiverId:generalValidationFields.id(lang),
+        note:z.string().optional()
+    }),
+})
+}
+
+
+export const acceptFriendRequest = (lang:LanguageEnum)=>{
+     return z.object({
+    params:z.strictObject({
+        friendRequestId:generalValidationFields.id(lang)
+    }),
+})
+}
+
+
+export const unFriend = (lang:LanguageEnum)=>{
+     return z.object({
+    params:z.strictObject({
+        friendId:generalValidationFields.id(lang)
+    }),
+})
+}
+export const followUser = (lang:LanguageEnum)=>{
+     return z.object({
+    params:z.strictObject({
+        userId: generalValidationFields.id(lang) 
+    })
+
+})
+}  
+
+export const updatePrivacySchema = (lang:LanguageEnum)=>{
+     return z.object({
+    body:z.strictObject({
+        isPrivate:generalValidationFields.isPrivate(lang)
+    }),
+})
+}
+
+
+export const blockFriend = (lang:LanguageEnum)=>{
+     return z.object({
+    params:z.strictObject({
+        friendId:generalValidationFields.id(lang)
+    }),
+})
+}

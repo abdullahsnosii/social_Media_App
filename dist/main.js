@@ -10,6 +10,8 @@ const config_js_1 = require("./config.js");
 const connection_db_1 = require("./DB/connection.db");
 const send_email_js_1 = require("./common/utils/email/send.email.js");
 const email_enum_js_1 = require("./common/enum/email.enum.js");
+const user_repository_js_1 = require("./common/repository/user.repository.js");
+const mongoose_1 = __importDefault(require("mongoose"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 (0, connection_db_1.bootstarpDB)(app, config_js_1.PORT);
@@ -20,3 +22,14 @@ app.use("/auth", modules.authenticationController);
 app.use("/users", modules.userController);
 app.use(errorMiddleware.globalErrorHandling);
 (0, send_email_js_1.sendEmail)({ subject: email_enum_js_1.EmailSubjectEnum.CONFIRM_EMAIL, to: ["sohylahaytham6@gmail.com"], html: "sosoooo" });
+async function test() {
+    const userModel = new user_repository_js_1.UserRepository();
+    const user = await userModel.findOne({
+        filter: { paranoid: false },
+    });
+    console.log(user);
+}
+test();
+mongoose_1.default.connect(process.env.DB_URI)
+    .then(() => console.log("DB CONNECTED"))
+    .catch((err) => console.error("DB ERROR:", err.message));

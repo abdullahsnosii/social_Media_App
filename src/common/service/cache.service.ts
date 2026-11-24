@@ -46,18 +46,19 @@ export class CacheService {
     }
 
 
+async mget ({ key1, key2 }:{key1:string , key2:string }){
+    const values = await this.client.mGet([key1, key2])
 
-    // async mget({ key1, key2 }:{ key1:string, key2:string }) {
-    //     const values = await this.client.mGet([key1, key2])
+    return values.map(value => {
+        try {
+            return JSON.parse(value as string)
+        } catch (error) {
+            return value
+        }
+    })
+}
 
-    //     return values.map(value  {
-    //         try {
-    //             return JSON.parse(value)
-    //         } catch(error) {
-    //             return value
-    //         }
-    //     })
-    // }
+
 
 
 
@@ -100,6 +101,21 @@ export class CacheService {
     async incrBy({ key, value = 1 }: { key: string, value?: any }) {
         return await this.client.incrBy(key, value)
     }
+    async sAdd({ key, value }: { key: string, value: string }) {
+    return await this.client.sAdd(key, value);
+}
+
+async sRem({ key, value }: { key: string, value: string }) {
+    return await this.client.sRem(key, value);
+}
+
+async sMembers({ key }: { key: string }) {
+    return await this.client.sMembers(key);
+}
+
+async sCard({ key }: { key: string }) {
+    return await this.client.sCard(key);
+}
 }
 
 

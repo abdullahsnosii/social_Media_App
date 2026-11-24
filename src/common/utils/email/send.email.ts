@@ -66,7 +66,7 @@ export async function sendEmail({
 
     console.log("Message sent: %s", info.messageId);
     console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-      console.log("Accepted:", info.accepted); // اعرف بعت ل مين
+      // console.log("Accepted:", info.accepted); // اعرف بعت ل مين
   } catch (err) {
     console.error("Error while sending mail:", err);
   }

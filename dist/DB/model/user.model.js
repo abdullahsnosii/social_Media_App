@@ -52,7 +52,9 @@ const userSchema = new mongoose_1.default.Schema({
     },
     isPrivate: { type: Boolean, default: false },
     changeCredentialsTime: Date,
-    twoStepVerification: Date
+    twoStepVerification: Date,
+    status: { type: Number, enum: index_js_1.AccountStatusEnum, default: index_js_1.AccountStatusEnum.ACTIVE },
+    ChangeStatusAt: Date,
 }, {
     timestamps: true,
     toObject: { virtuals: true },
@@ -66,5 +68,12 @@ userSchema.virtual("username").set(function (value) {
     this.set({ firstName, lastName });
 }).get(function () {
     return `${this.firstName} ${this.lastName}`;
+});
+userSchema.pre(["findOne", "find"], async function () {
+    const query = this.getFilter();
+    if (query.paranoid != false) {
+        this.setQuery({ ...query, status: { $ne: index_js_1.AccountStatusEnum.ARCHIVE } });
+    }
+    console.log({ post: this.getFilter() });
 });
 exports.UserModel = mongoose_1.default.models.User || mongoose_1.default.model("User", userSchema);

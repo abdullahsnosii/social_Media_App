@@ -50,7 +50,17 @@ const validationMessages :Record<number , {ar :string ; en :string}>  = {
     109: {
         ar: "البيانات غير متطابقة",
         en: "Fields do not match"
+    },
+       111: {
+        ar: "محتوى البوست يجب ألا يقل عن حرف واحد",
+        en: "Post content must contain at least 1 character"
+    },
+
+    112: {
+       ar: "محتوى البوست يجب ألا يتجاوز 50000 حرف",
+       en: "Post content must not exceed 50000 characters"
     }
+
 }
 
 
@@ -90,6 +100,11 @@ export const generalValidationFields = {
                 message: getValidationMessages({lang:lang, code:105})
             }),
 
+    isPrivate: (lang: LanguageEnum) =>
+        z.boolean({
+            message: "invalid format"
+        }),
+
 
     username: (lang:LanguageEnum) =>
         z.string()
@@ -115,6 +130,17 @@ export const generalValidationFields = {
             .max(16, {
                 message: getValidationMessages({lang:lang, code:105})
             }),
+            
+    content: (lang: LanguageEnum) =>
+        z.string()
+            .min(1, {
+                message: getValidationMessages({lang:lang, code:111})
+            })
+            .max(50000, {
+                message: getValidationMessages({lang:lang, code:112})
+            }).
+            optional(),
+
 
 
     gender: (lang:LanguageEnum) =>

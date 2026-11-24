@@ -33,6 +33,17 @@ class CacheService {
             return value;
         }
     }
+    async mget({ key1, key2 }) {
+        const values = await this.client.mGet([key1, key2]);
+        return values.map(value => {
+            try {
+                return JSON.parse(value);
+            }
+            catch (error) {
+                return value;
+            }
+        });
+    }
     async exist({ key }) {
         return await this.client.exists(key);
     }
@@ -56,6 +67,18 @@ class CacheService {
     }
     async incrBy({ key, value = 1 }) {
         return await this.client.incrBy(key, value);
+    }
+    async sAdd({ key, value }) {
+        return await this.client.sAdd(key, value);
+    }
+    async sRem({ key, value }) {
+        return await this.client.sRem(key, value);
+    }
+    async sMembers({ key }) {
+        return await this.client.sMembers(key);
+    }
+    async sCard({ key }) {
+        return await this.client.sCard(key);
     }
 }
 exports.CacheService = CacheService;

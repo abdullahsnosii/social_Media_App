@@ -7,6 +7,8 @@ import type { IResponse } from "../../common/interface/response.interface.js";
 import type { IUser } from "../../common/interface/user.interface.js";
 import authenticationService from "./authentication.service";
 import { authentication } from "../../middleware/authentication.middleware.js";
+import { getIssuer } from "../../common/utils/issuer.js";
+import type { ILoginResponse } from "./entities/authentication.entites.js";
 
 const router = Router({ strict: true, caseSensitive: true })
 // const routers = Router({
@@ -64,8 +66,8 @@ router.patch("/reset-forgot-password", validation(validators.veriryForgotPasswor
 
 
 router.post("/signup-with-gmail", responseFormatter(
-    async (req: Request, res: Response, next: NextFunction): Promise<IResponse<IUser>> => {
-        const { status, data } = await authenticationService.signupWithGmail(req.body, `${req.protocol}://${req.host}`)
+    async (req: Request, res: Response, next: NextFunction): Promise<IResponse<ILoginResponse>> => {
+        const { status, data } = await authenticationService.signupWithGmail(req.body, getIssuer(req))
         return { status: status, data }
     }))
 
@@ -82,10 +84,10 @@ router.post("/confirm-2-step-verification", authentication(), validation(validat
 }))
 
 // const loginLimiter = generatelimiter({ limit: 5, TTL: 5,skipSuccessfulRequests:true })
-router.post("/login", validation(validators.login),    responseFormatter(async (req: Request, res: Response, next: NextFunction): Promise<IResponse<IUser>> => {
-    const data = await authenticationService.login(req.validate.body, `${req.protocol}://${req.host}`)
+router.post("/login", validation(validators.login),    responseFormatter(async (req: Request, res: Response, next: NextFunction): Promise<IResponse<ILoginResponse>> => {
+    const data = await authenticationService.login(req.validate.body, getIssuer(req))
     // await del({ key: req.rateLimit.key }) // احذف KEY لو قبلت دخول 
-    return {  data }
+    return {  data , status:201}
 
 }))
 

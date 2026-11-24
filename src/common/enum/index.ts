@@ -1,4 +1,6 @@
 export * from './user.enum'
 export * from './security.enum'
 export * from './email.enum'
-export * from './follow.enum.js'
+export * from './friendRequest.enum.js'
+export * from './post.enum.js'
+export * from './multer.enum.js'

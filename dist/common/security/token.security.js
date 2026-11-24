@@ -1,19 +1,49 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.tokenSecurity = exports.TokenSecurity = void 0;
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const jsonwebtoken_1 = __importStar(require("jsonwebtoken"));
 const config_js_1 = require("../../config.js");
 const security_enum_js_1 = require("../enum/security.enum.js");
 const user_enum_js_1 = require("../enum/user.enum.js");
 const hash_security_js_1 = require("./hash.security.js");
 const node_crypto_1 = require("node:crypto");
-const mongoose_1 = __importDefault(require("mongoose"));
 const Domain_exciption_js_1 = require("../exciption/Domain.exciption.js");
 const user_repository_js_1 = require("../repository/user.repository.js");
 const cache_service_js_1 = require("../service/cache.service.js");
+const objectId_js_1 = require("../utils/objectId.js");
 class TokenSecurity {
     userRepository;
     cacheService;
@@ -30,11 +60,11 @@ class TokenSecurity {
     async userRevokeTokenKey({ userId, jti }) {
         return `${this.userBaseRevokeTokenKey({ userId })}::${jti}`;
     }
-    async createToken({ payload = {}, secret_key = config_js_1.ACCESS_ADMIN_TOKEN_SIGNUTURE, options = {} } = {}) {
+    async createToken({ payload = {}, secret_key = config_js_1.ACCESS_ADMIN_TOKEN_SIGNUTURE, options = {} }) {
         return jsonwebtoken_1.default.sign(payload, secret_key, options);
     }
-    async verifyToken({ token = "", secret_key = config_js_1.ACCESS_USER_TOKEN_SIGNUTURE, } = {}) {
-        return jsonwebtoken_1.default.verify(token, secret_key);
+    async verifyToken({ token = "", secret_key = config_js_1.ACCESS_USER_TOKEN_SIGNUTURE, }) {
+        return (0, jsonwebtoken_1.verify)(token, secret_key);
     }
     async getTokenSignatures({ role = user_enum_js_1.RoleEnum.USER } = {}) {
         let signatures;
@@ -52,9 +82,8 @@ class TokenSecurity {
         const signatures = await this.getTokenSignatures({ role });
         return tokenType == security_enum_js_1.tokenTypeEnum.ACCESS ? signatures.accessSignature : signatures.refreshSignature;
     }
-    async decodeToken({ authorization = "", tokenType = security_enum_js_1.tokenTypeEnum.ACCESS } = {}) {
+    async decodeToken({ authorization = "", tokenType = security_enum_js_1.tokenTypeEnum.ACCESS }) {
         const decoded = jsonwebtoken_1.default.decode(authorization);
-        console.log(decoded);
         if (!decoded?.aud?.length)
             throw new Domain_exciption_js_1.BadRequestExciption("missing decoded payload");
         const payload = await this.verifyToken({
@@ -67,11 +96,10 @@ class TokenSecurity {
             throw new Domain_exciption_js_1.UnauthorizedExciption("Expired login credentials");
         }
         const user = await this.userRepository.findbyId({
-            id: new mongoose_1.default.Types.ObjectId(payload.sub)
+            id: (0, objectId_js_1.ToObjectId)(payload.sub)
         });
         if (!user)
             throw new Domain_exciption_js_1.NotFoundExciption("Invalid user");
-        console.log({ change: user.changeCredentialsTime?.getTime(), iat: payload.iat * 1000 });
         if ((user.changeCredentialsTime?.getTime() ?? 0) > payload.iat * 1000) {
             throw new Domain_exciption_js_1.UnauthorizedExciption("Expired login credentials");
         }

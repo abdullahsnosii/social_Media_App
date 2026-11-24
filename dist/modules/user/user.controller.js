@@ -46,53 +46,85 @@ const multer_middleware_js_1 = require("../../middleware/multer.middleware.js");
 const local_multer_js_1 = require("../../common/utils/multer/local.multer.js");
 const validation_middleware_js_1 = require("../../middleware/validation.middleware.js");
 const validators = __importStar(require("./user.validation.js"));
-const user_social_service_js_1 = __importDefault(require("./user.social.service.js"));
+const issuer_js_1 = require("../../common/utils/issuer.js");
 const router = (0, express_1.Router)();
 router.get("/", (0, authentication_middleware_js_1.authentication)(), (0, index_js_1.responseFormatter)(async (req, res, next) => {
     const data = await user_service_js_1.default.profile(req.user);
     return { data };
 }));
-router.patch("/profile-image", (0, authentication_middleware_js_1.authentication)(), (0, multer_middleware_js_1.uploadMiddleware)({ multerMiddleware: (0, local_multer_js_1.localFielupload)({ maxFileSize: 2 }).single("attachment"), customPath: "users", validation: local_multer_js_1.fileValidation.image }), (0, index_js_1.responseFormatter)(async (req, res, next) => {
-    req.user.image = req.file.path;
-    await req.user.save();
-    return { data: { user: req.user } };
+router.patch("/profile-image", (0, authentication_middleware_js_1.authentication)(), (0, multer_middleware_js_1.uploadMiddleware)({
+    multerMiddleware: (0, local_multer_js_1.localFielupload)({}).single("attachment"),
+    customPath: "User",
+    validation: local_multer_js_1.fileValidation.image
+}), (0, index_js_1.responseFormatter)(async (req, res, next) => {
+    const account = await user_service_js_1.default.profileImage(req.file, req.user);
+    return { data: account };
+}));
+router.patch("/profile-cover-image", (0, authentication_middleware_js_1.authentication)(), (0, multer_middleware_js_1.uploadMiddleware)({
+    multerMiddleware: (0, local_multer_js_1.localFielupload)({}).array("attachments", 3),
+    customPath: "User",
+    validation: local_multer_js_1.fileValidation.image
+}), (0, index_js_1.responseFormatter)(async (req, res, next) => {
+    const account = await user_service_js_1.default.profileCoverImages(req.files, req.user);
+    return { data: account };
 }));
 router.patch("/", (0, authentication_middleware_js_1.authentication)(), (0, authentication_middleware_js_1.authorization)(user_enum_js_1.RoleEnum.USER), (0, index_js_1.responseFormatter)(async (req, res, next) => {
-    const data = await user_service_js_1.default.update(req.user, req.body);
-    return { data };
+    await user_service_js_1.default.updateProfile(req.body, req.user);
 }));
 router.post("/rotate-token", (0, authentication_middleware_js_1.authentication)(security_enum_js_1.tokenTypeEnum.REFRESH), (0, index_js_1.responseFormatter)(async (req, res, next) => {
-    const data = await user_service_js_1.default.rotateToken(req.payload, req.user, `${req.protocol}://${req.host}`);
-    console.log(req.payload);
-    return { data };
+    const data = await user_service_js_1.default.rotateToken(req.payload, req.user, (0, issuer_js_1.getIssuer)(req));
+    return { status: 200, data };
+}));
+router.post("/follow/:userId", (0, authentication_middleware_js_1.authentication)(security_enum_js_1.tokenTypeEnum.ACCESS), (0, validation_middleware_js_1.validation)(validators.followUser), (0, index_js_1.responseFormatter)(async (req, res, next) => {
+    const data = await user_service_js_1.default.followUser(req.validate.params, req.user);
+    return { status: 200, data };
+}));
+router.delete("/unfollow/:userId", (0, authentication_middleware_js_1.authentication)(security_enum_js_1.tokenTypeEnum.ACCESS), (0, validation_middleware_js_1.validation)(validators.followUser), (0, index_js_1.responseFormatter)(async (req, res, next) => {
+    const data = await user_service_js_1.default.UnFollowUser(req.validate.params, req.user);
+    return { status: 200, data };
+}));
+router.get("/search", (0, authentication_middleware_js_1.authentication)(security_enum_js_1.tokenTypeEnum.ACCESS), (0, validation_middleware_js_1.validation)(validators.search), (0, index_js_1.responseFormatter)(async (req, res, next) => {
+    const data = await user_service_js_1.default.searchUsers(req.validate.query, req.user);
+    return { status: 200, data };
+}));
+router.get("/suggestions", (0, authentication_middleware_js_1.authentication)(security_enum_js_1.tokenTypeEnum.ACCESS), (0, index_js_1.responseFormatter)(async (req, res, next) => {
+    const data = await user_service_js_1.default.getUserSuggestions(req.user);
+    return { status: 200, data };
+}));
+router.patch("/privacy", (0, authentication_middleware_js_1.authentication)(security_enum_js_1.tokenTypeEnum.ACCESS), (0, validation_middleware_js_1.validation)(validators.updatePrivacySchema), (0, index_js_1.responseFormatter)(async (req, res, next) => {
+    const data = await user_service_js_1.default.updatePrivacySettings(req.body, req.user);
+    return { status: 200, data };
+}));
+router.get("/suggestions", (0, authentication_middleware_js_1.authentication)(security_enum_js_1.tokenTypeEnum.ACCESS), (0, index_js_1.responseFormatter)(async (req, res, next) => {
+    const data = await user_service_js_1.default.getUserSuggestions(req.user);
+    return { status: 200, data };
 }));
 router.post("/logout", (0, authentication_middleware_js_1.authentication)(), (0, index_js_1.responseFormatter)(async (req, res, next) => {
     const data = await user_service_js_1.default.logout(req.payload, req.user, req.body);
-    console.log(req.payload);
-    return { data };
+    return { status: 200, data };
 }));
-router.get("/search", (0, authentication_middleware_js_1.authentication)(), (0, validation_middleware_js_1.validation)(validators.search), (0, index_js_1.responseFormatter)(async (req, res, next) => {
-    const data = await user_social_service_js_1.default.search(req.user, req.validate.query);
-    return { data };
+router.delete("/deleteAccount", (0, authentication_middleware_js_1.authentication)(security_enum_js_1.tokenTypeEnum.ACCESS), (0, index_js_1.responseFormatter)(async (req, res, next) => {
+    const data = await user_service_js_1.default.deleteAccount(req.user);
+    return { status: 200, data };
 }));
-router.get("/suggestions", (0, authentication_middleware_js_1.authentication)(), (0, validation_middleware_js_1.validation)(validators.suggestions), (0, index_js_1.responseFormatter)(async (req, res, next) => {
-    const data = await user_social_service_js_1.default.suggestions(req.user, req.validate.query.limit);
-    return { data };
+router.post("/send-friend-request", (0, authentication_middleware_js_1.authentication)(), (0, validation_middleware_js_1.validation)(validators.sendFriendRequest), (0, index_js_1.responseFormatter)(async (req, res, next) => {
+    const request = await user_service_js_1.default.sendFriendRequest(req.body, req.user);
+    return { status: 200, data: request };
 }));
-router.patch("/settings/privacy", (0, authentication_middleware_js_1.authentication)(), (0, validation_middleware_js_1.validation)(validators.updatePrivacy), (0, index_js_1.responseFormatter)(async (req, res, next) => {
-    const data = await user_social_service_js_1.default.updatePrivacy(req.user, req.validate.body.isPrivate);
-    return { data };
+router.patch("/accept-friend-request/:friendRequestId", (0, authentication_middleware_js_1.authentication)(), (0, validation_middleware_js_1.validation)(validators.acceptFriendRequest), (0, index_js_1.responseFormatter)(async (req, res, next) => {
+    const request = await user_service_js_1.default.acceptFriendRequest(req.params, req.user);
+    return { status: 200, data: request };
 }));
-router.post("/:id/follow", (0, authentication_middleware_js_1.authentication)(), (0, validation_middleware_js_1.validation)(validators.userIdParam), (0, index_js_1.responseFormatter)(async (req, res, next) => {
-    const data = await user_social_service_js_1.default.follow(req.user, req.validate.params.id);
-    return { status: 201, data };
+router.patch("/cancel-friend-request/:friendRequestId", (0, authentication_middleware_js_1.authentication)(), (0, validation_middleware_js_1.validation)(validators.acceptFriendRequest), (0, index_js_1.responseFormatter)(async (req, res, next) => {
+    const request = await user_service_js_1.default.cancelFriendRequest(req.params, req.user);
+    return { status: 200, data: request };
 }));
-router.delete("/:id/follow", (0, authentication_middleware_js_1.authentication)(), (0, validation_middleware_js_1.validation)(validators.userIdParam), (0, index_js_1.responseFormatter)(async (req, res, next) => {
-    await user_social_service_js_1.default.unfollow(req.user, req.validate.params.id);
-    return;
+router.patch("/un-friend/:friendId", (0, authentication_middleware_js_1.authentication)(), (0, validation_middleware_js_1.validation)(validators.unFriend), (0, index_js_1.responseFormatter)(async (req, res, next) => {
+    const request = await user_service_js_1.default.unFriend(req.params, req.user);
+    return { status: 200, data: request };
 }));
-router.get("/:id", (0, authentication_middleware_js_1.authentication)(), (0, validation_middleware_js_1.validation)(validators.userIdParam), (0, index_js_1.responseFormatter)(async (req, res, next) => {
-    const data = await user_social_service_js_1.default.getUserProfile(req.user, req.validate.params.id);
-    return { data };
+router.patch("/block-friend/:friendId", (0, authentication_middleware_js_1.authentication)(), (0, validation_middleware_js_1.validation)(validators.blockFriend), (0, index_js_1.responseFormatter)(async (req, res, next) => {
+    const request = await user_service_js_1.default.blockFriend(req.params, req.user);
+    return { status: 200, data: request };
 }));
 exports.default = router;

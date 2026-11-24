@@ -43,6 +43,7 @@ const validators = __importStar(require("./authentication.validation"));
 const validation_middleware_js_1 = require("../../middleware/validation.middleware.js");
 const authentication_service_2 = __importDefault(require("./authentication.service"));
 const authentication_middleware_js_1 = require("../../middleware/authentication.middleware.js");
+const issuer_js_1 = require("../../common/utils/issuer.js");
 const router = (0, express_1.Router)({ strict: true, caseSensitive: true });
 router.post("/signup", (0, validation_middleware_js_1.validation)(validators.signup), (0, response_middleware_1.responseFormatter)(async (req, res, next) => {
     const data = await authentication_service_1.default.signup(req.validate.body);
@@ -69,7 +70,7 @@ router.patch("/reset-forgot-password", (0, validation_middleware_js_1.validation
     return { status: 200, data };
 }));
 router.post("/signup-with-gmail", (0, response_middleware_1.responseFormatter)(async (req, res, next) => {
-    const { status, data } = await authentication_service_2.default.signupWithGmail(req.body, `${req.protocol}://${req.host}`);
+    const { status, data } = await authentication_service_2.default.signupWithGmail(req.body, (0, issuer_js_1.getIssuer)(req));
     return { status: status, data };
 }));
 router.post("/enable-2-step-verification", (0, authentication_middleware_js_1.authentication)(), (0, validation_middleware_js_1.validation)(validators.enable_2_step_verification), (0, response_middleware_1.responseFormatter)(async (req, res, next) => {
@@ -81,8 +82,8 @@ router.post("/confirm-2-step-verification", (0, authentication_middleware_js_1.a
     return { status: 201, data };
 }));
 router.post("/login", (0, validation_middleware_js_1.validation)(validators.login), (0, response_middleware_1.responseFormatter)(async (req, res, next) => {
-    const data = await authentication_service_2.default.login(req.validate.body, `${req.protocol}://${req.host}`);
-    return { data };
+    const data = await authentication_service_2.default.login(req.validate.body, (0, issuer_js_1.getIssuer)(req));
+    return { data, status: 201 };
 }));
 router.post("/Confirmation-Login", (0, validation_middleware_js_1.validation)(validators.Confirmation_Login), (0, response_middleware_1.responseFormatter)(async (req, res, next) => {
     const data = await authentication_service_2.default.confirmLogin(req.body, `${req.protocol}://${req.host}`);

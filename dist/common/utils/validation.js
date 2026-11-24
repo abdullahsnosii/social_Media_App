@@ -44,6 +44,14 @@ const validationMessages = {
     109: {
         ar: "البيانات غير متطابقة",
         en: "Fields do not match"
+    },
+    111: {
+        ar: "محتوى البوست يجب ألا يقل عن حرف واحد",
+        en: "Post content must contain at least 1 character"
+    },
+    112: {
+        ar: "محتوى البوست يجب ألا يتجاوز 50000 حرف",
+        en: "Post content must not exceed 50000 characters"
     }
 };
 const getValidationMessages = ({ lang, code }) => {
@@ -71,6 +79,9 @@ exports.generalValidationFields = {
         .max(16, {
         message: getValidationMessages({ lang: lang, code: 105 })
     }),
+    isPrivate: (lang) => zod_1.z.boolean({
+        message: "invalid format"
+    }),
     username: (lang) => zod_1.z.string()
         .min(2, {
         message: getValidationMessages({ lang: lang, code: 102 })
@@ -88,6 +99,14 @@ exports.generalValidationFields = {
         .max(16, {
         message: getValidationMessages({ lang: lang, code: 105 })
     }),
+    content: (lang) => zod_1.z.string()
+        .min(1, {
+        message: getValidationMessages({ lang: lang, code: 111 })
+    })
+        .max(50000, {
+        message: getValidationMessages({ lang: lang, code: 112 })
+    }).
+        optional(),
     gender: (lang) => zod_1.z.enum(user_enum_js_1.GenderEnum, {
         message: getValidationMessages({ lang: lang, code: 107 })
     }),

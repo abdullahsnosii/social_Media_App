@@ -5,7 +5,6 @@ const Domain_exciption_js_1 = require("../../common/exciption/Domain.exciption.j
 const repository_1 = require("../../common/repository");
 const cache_service_js_1 = require("../../common/service/cache.service.js");
 const hash_security_js_1 = require("../../common/security/hash.security.js");
-const encryption_security_js_1 = require("../../common/security/encryption.security.js");
 const email_enum_js_1 = require("../../common/enum/email.enum.js");
 const send_email_js_1 = require("../../common/utils/email/send.email.js");
 const email_event_js_1 = require("../../common/utils/email/email.event.js");
@@ -15,15 +14,16 @@ const key_login_js_1 = require("../../common/utils/multer/key.login.js");
 const token_security_js_1 = require("../../common/security/token.security.js");
 const google_auth_library_1 = require("google-auth-library");
 const config_js_1 = require("../../config.js");
-const clientAuth = new google_auth_library_1.OAuth2Client();
 class AuthenticationService {
     userRepository;
     cacheService;
     tokenSecurity;
+    clientAuth;
     constructor() {
         this.cacheService = cache_service_js_1.cacheService;
         this.tokenSecurity = token_security_js_1.tokenSecurity;
         this.userRepository = new repository_1.UserRepository();
+        this.clientAuth = new google_auth_library_1.OAuth2Client();
     }
     async sendEmailOtp({ email, subject, title, expiresIn = 120, maxTrials = 3, blockInSeconds = 300 }) {
         const existOTP_TTL = await this.cacheService.ttl({ key: (0, send_email_js_1.userEmailKey)({ email, subject }) });
@@ -60,8 +60,8 @@ class AuthenticationService {
         const account = await this.userRepository.createone({
             data: {
                 email,
-                password: await (0, hash_security_js_1.hash)(password),
-                phone: await (0, encryption_security_js_1.encryption)(phone),
+                password,
+                phone,
                 username
             }
         });
@@ -198,7 +198,7 @@ class AuthenticationService {
         return await this.tokenSecurity.createLoginCredentials({ user: account, issuer });
     }
     async verifyGoogleAccount(idToken) {
-        const ticket = await clientAuth.verifyIdToken({
+        const ticket = await this.clientAuth.verifyIdToken({
             idToken,
             audience: config_js_1.WEB_CLIENT_IDS
         });

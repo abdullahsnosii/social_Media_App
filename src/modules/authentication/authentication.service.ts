@@ -16,20 +16,24 @@ import { tokenSecurity, type TokenSecurity } from "../../common/security/token.s
 import type { HydratedDocument } from "mongoose";
 import { OAuth2Client, type TokenPayload } from "google-auth-library"
 import { WEB_CLIENT_IDS } from "../../config.js";
-import { string } from "zod";
-const clientAuth = new OAuth2Client()
+import type { ILoginResponse, ISignupWithGmailResponse } from "./entities/authentication.entites.js";
+import type { HUser } from "../../DB/model/user.model.js";
+
 
 
 export class AuthenticationService {
     private userRepository: UserRepository
     private cacheService: CacheService
     private tokenSecurity: TokenSecurity
+    private clientAuth: OAuth2Client
     constructor() {
         this.cacheService = cacheService
         this.tokenSecurity = tokenSecurity
         this.userRepository = new UserRepository()
-
+        this.clientAuth = new OAuth2Client()
     }
+
+
 
 
 
@@ -83,8 +87,8 @@ export class AuthenticationService {
         const account = await this.userRepository.createone({
             data: {
                 email,
-                password: await hash(password),
-                phone: await encryption(phone),
+                password,
+                phone,
                 username
             }
         })
@@ -156,7 +160,7 @@ export class AuthenticationService {
 
 
 
-    async verifyForgotPasswordCode({ email, otp }:{ email: string, otp: string }):  Promise<HydratedDocument<IUser>> {
+    async verifyForgotPasswordCode({ email, otp }: { email: string, otp: string }): Promise<HydratedDocument<IUser>> {
 
         const account = await this.userRepository.findOne({
             filter: { email, provider: ProviderEnum.SYSTEM, confirmEmail: { $exists: true } },
@@ -181,7 +185,7 @@ export class AuthenticationService {
 
     async resetForgotPassword({ email, otp, password }: { email: string, otp: string, password: string }) {
 
-        const account = await this.verifyForgotPasswordCode({ email, otp }) 
+        const account = await this.verifyForgotPasswordCode({ email, otp })
         account.password = await hash(password)
         account.changeCredentialsTime = new Date()
         await account.save()
@@ -238,7 +242,7 @@ export class AuthenticationService {
 
     }
 
-    async login({ email, password }: { email: string, password: string }, issuer: string, maxTrials: number = 5, blockInSeconds: number = 300) {
+    async login({ email, password }: LoginDto, issuer: string, maxTrials: number = 5, blockInSeconds: number = 300): Promise<ILoginResponse | { message: string }> {
 
         const oldTrials = await this.cacheService.get({ key: loginTrialsKey({ email }) }) ?? 0;
         if (oldTrials >= maxTrials) {
@@ -302,75 +306,50 @@ export class AuthenticationService {
 
 
 
-async  verifyGoogleAccount(idToken:string):Promise<TokenPayload> {
-  const ticket = await clientAuth.verifyIdToken({
-      idToken,
-      audience: WEB_CLIENT_IDS
-  });
-  const payload = ticket.getPayload() as TokenPayload;
-  if(!payload.email_verified ) throw new BadRequestExciption("email not verified")
-  return payload
-}
-
-
-async signupWithGmail  ({idToken}:{idToken:string} , issuer:string):Promise<{status:number , data:{access_token:string , refresh_token:string}}>{
-
-console.log({idToken});
-
-const {name , email , picture} = await this.verifyGoogleAccount(idToken)
-console.log({name , email , picture});
-
-let status:number = 201;
-const existAccount = await this.userRepository.findOne({
-    filter:{email:email as string}
-}) as HydratedDocument<IUser> | null
-
-if (existAccount) {
-    if (existAccount.provider != ProviderEnum.GOOGLE) {
-        throw new ConfilectRrquestExciption("Invalid account provider")
+    async verifyGoogleAccount(idToken: string): Promise<TokenPayload> {
+        const ticket = await this.clientAuth.verifyIdToken({
+            idToken,
+            audience: WEB_CLIENT_IDS
+        });
+        const payload = ticket.getPayload() as TokenPayload;
+        if (!payload.email_verified) throw new BadRequestExciption("email not verified")
+        return payload
     }
-   
-    return {status:200  , data: await this.tokenSecurity.createLoginCredentials({user:existAccount , issuer})}
-}
- const user = await this.userRepository.createone({
-    data:{
-        username:name,
-        email,
-        confirmEmail:new Date(),
-        provider:ProviderEnum.GOOGLE,
-        image:picture
+
+
+    async signupWithGmail({ idToken }: { idToken: string }, issuer: string): Promise<ISignupWithGmailResponse> {
+
+        console.log({ idToken });
+
+        const { name, email, picture } = await this.verifyGoogleAccount(idToken)
+        console.log({ name, email, picture });
+
+        let status: number = 201;
+        const existAccount = await this.userRepository.findOne({
+            filter: { email: email as string }
+        }) as HUser | null
+
+        if (existAccount) {
+            if (existAccount.provider != ProviderEnum.GOOGLE) {
+                throw new ConfilectRrquestExciption("Invalid account provider")
+            }
+
+            return { status: 200, data: await this.tokenSecurity.createLoginCredentials({ user: existAccount, issuer }) }
+        }
+        const user = await this.userRepository.createone({
+            data: {
+                username: name,
+                email,
+                confirmEmail: new Date(),
+                provider: ProviderEnum.GOOGLE,
+                image: picture
+            }
+        }) as HydratedDocument<IUser>
+        return { status, data: await this.tokenSecurity.createLoginCredentials({ user, issuer }) }
+
     }
- }) as HydratedDocument<IUser>
-return  {status  , data:await this.tokenSecurity.createLoginCredentials({user , issuer})}
-
-}
 
 
-    // signup = async ({ email, password, confirmPassword, phone, username }: SignupDto['body']): Promise<IUser> => {
-    //     this.cacheService.set({ key: "name", value: "snosii" })
-    //     const userExist = await this.userRepository.findOne({
-    //         filter: { email },
-    //         projection: { email: 1 },
-    //         options: { lean: false }
-    //     })
-    //     console.log(userExist);
-    //     if (userExist) {
-    //         userExist._id
-    //         throw new ConfilectRrquestExciption("Exist email")
-    //     }
-    //     const account: HUser = await this.userRepository.createone({
-    //         data: {
-    //             email,
-    //             password :await hash(password),
-    //             phone : await encryption(phone),
-    //             username
-    //         },
-    //         options: { validateBeforeSave: true }
-
-    //     })
-    //     // throw new TooManyRequestExciption("FAIL", "LOL") // ال cause اقدر هنا ابعته text او object او array 
-    //     return account
-    // }
 
 }
 

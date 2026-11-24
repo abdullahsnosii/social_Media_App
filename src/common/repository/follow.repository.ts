@@ -12,3 +12,6 @@ export class FollowRepository extends DatabaseRepository<IFollow> {
         return await this.model.aggregate(pipeline)
     }
 }
+
+
+export const followRepository = new FollowRepository();

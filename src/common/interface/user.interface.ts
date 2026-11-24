@@ -1,8 +1,12 @@
-import type { GenderEnum, ProviderEnum, RoleEnum } from "../enum/user.enum.js";
+import type mongoose from "mongoose";
+import type { AccountStatusEnum,  GenderEnum, ProviderEnum, RoleEnum } from "../enum/user.enum.js";
 
 
 
 export interface IUser {
+   status:AccountStatusEnum;
+   ChangeStatusAt:Date;
+   _id: mongoose.Types.ObjectId;
     firstName: string;
     lastName: string;
     username?: string;
@@ -12,8 +16,8 @@ export interface IUser {
     DOB?: string;
     confirmEmail?: string;
 
-    image?: String;
-    coverImage?: [String];
+    image?: string;
+    coverImage?: string[];
     isPrivate?: boolean;
     gender: GenderEnum
     role: RoleEnum
